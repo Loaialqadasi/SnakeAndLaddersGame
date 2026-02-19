@@ -1,12 +1,13 @@
 package com.lqad.snakes.ui;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Map; // Import new file
 import java.util.Random;
 
 import com.lqad.snakes.engine.GameEngin;
+import com.lqad.snakes.engine.GameRules;
+import com.lqad.snakes.engine.MoveResult;
 import com.lqad.snakes.model.Ability;
 import com.lqad.snakes.model.Player;
 
@@ -72,7 +73,7 @@ public class BoardView extends StackPane {
     private final StackPane victoryOverlay = new StackPane();
     private final StackPane dialogOverlay = new StackPane();
 
-    // GAME DATA
+    // DATA
     private final Map<Player, Group> playerTokens = new HashMap<>();
     private final Map<Player, HBox> inventoryDisplays = new HashMap<>();
     private final Label turnLabel = new Label();
@@ -97,11 +98,7 @@ public class BoardView extends StackPane {
         updateTurnLabel();
 
         StackPane gameLayers = new StackPane(
-                backgroundLayer,
-                boardLayer,
-                objectLayer,
-                particleLayer,
-                playerLayer
+                backgroundLayer, boardLayer, objectLayer, particleLayer, playerLayer
         );
 
         BorderPane layout = new BorderPane();
@@ -118,105 +115,64 @@ public class BoardView extends StackPane {
         getChildren().addAll(layout, dialogOverlay, victoryOverlay);
     }
 
-    /* ================= SETUP ================= */
+    // ... [KEEP ALL SETUP METHODS: buildBackground, buildBoard, drawObjects, etc.] ...
+    // ... Copy them from previous version, they are purely visual and fine ...
+    // ... INCLUDING: drawRealisticLadder, drawCartoonSnake, createSnakeHead, buildPlayers ...
     
+    /* ================= PASTE THE VISUAL SETUP METHODS HERE ================= */
     private void buildBackground() {
         Rectangle bg = new Rectangle(1200, 800);
-        bg.setFill(new RadialGradient(0, 0, 0.5, 0.5, 1, true, CycleMethod.NO_CYCLE, 
-            new Stop(0, Color.web("#2b5876")), new Stop(1, Color.web("#4e4376"))));
+        bg.setFill(new RadialGradient(0, 0, 0.5, 0.5, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#2b5876")), new Stop(1, Color.web("#4e4376"))));
         backgroundLayer.getChildren().add(bg);
     }
-    
-    private void buildBoard() { // i made chnages here to let movement smootlier as in ZikZak
+    private void buildBoard() {
         Group gridGroup = new Group();
         for (int r = 0; r < SIZE; r++) {
             for (int c = 0; c < SIZE; c++) {
-                
-                
-                int number; // it turns to be so easy after i let the ai explains to me and i wrote it
-                if (r  % 2 == 0 ) { 
-                    
-                    number = r* SIZE + c + 1 ;
-
-                } 
-                else {
-                    
-                     number = (r + 1)* SIZE - c ;
-
-                }
-
-                Rectangle tile = new Rectangle(TILE - 4, TILE - 4);
-                tile.setArcWidth(20); tile.setArcHeight(20);
+                int number = (r % 2 == 0) ? r * SIZE + c + 1 : (r + 1) * SIZE - c;
+                Rectangle tile = new Rectangle(TILE - 4, TILE - 4); tile.setArcWidth(20); tile.setArcHeight(20);
                 boolean isEven = (r + c) % 2 == 0;
-                tile.setFill(isEven 
-                    ? new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ffffff")), new Stop(1, Color.web("#e6e6e6"))) 
-                    : new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#d4fc79")), new Stop(1, Color.web("#96e6a1"))));
+                tile.setFill(isEven ? new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ffffff")), new Stop(1, Color.web("#e6e6e6"))) : new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#d4fc79")), new Stop(1, Color.web("#96e6a1"))));
                 tile.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.2)));
-                
-                Label label = new Label(String.valueOf(number));
-                label.setFont(Font.font("Verdana", FontWeight.BOLD, 14));
-                label.setTextFill(Color.rgb(0,0,0,0.5));
-                
-                StackPane cell = new StackPane(tile, label);
-                
-                
-                cell.setLayoutX(c * TILE); 
-                cell.setLayoutY((SIZE - r - 1) * TILE);
-                
+                Label label = new Label(String.valueOf(number)); label.setFont(Font.font("Verdana", FontWeight.BOLD, 14)); label.setTextFill(Color.rgb(0,0,0,0.5));
+                StackPane cell = new StackPane(tile, label); cell.setLayoutX(c * TILE); cell.setLayoutY((SIZE - r - 1) * TILE);
                 gridGroup.getChildren().add(cell);
             }
         }
-        
-        gridGroup.setTranslateX(50); 
-        gridGroup.setTranslateY(50);
+        gridGroup.setTranslateX(50); gridGroup.setTranslateY(50);
         boardLayer.getChildren().add(gridGroup);
     }
-
     private void drawObjects() {
         for (var entry : snakesAndLadders.entrySet()) {
             int start = entry.getKey(); int end = entry.getValue();
-            
             double[] s = getCenter(start); double[] e = getCenter(end);
             if (end > start) drawRealisticLadder(s[0], s[1], e[0], e[1]);
             else drawCartoonSnake(s[0], s[1], e[0], e[1]);
         }
     }
-    
     private void drawRealisticLadder(double x1, double y1, double x2, double y2) {
         double width = 25; double dx = x2 - x1; double dy = y2 - y1;
-        double len = Math.sqrt(dx * dx + dy * dy); 
-        double nx = -dy / len * (width / 2); double ny = dx / len * (width / 2);
-        
-        Line leftRail = new Line(x1 - nx, y1 - ny, x2 - nx, y2 - ny); 
-        leftRail.setStrokeWidth(6); leftRail.setStroke(Color.SADDLEBROWN); leftRail.setStrokeLineCap(StrokeLineCap.ROUND);
-        
-        Line rightRail = new Line(x1 + nx, y1 + ny, x2 + nx, y2 + ny); 
-        rightRail.setStrokeWidth(6); rightRail.setStroke(Color.SADDLEBROWN); rightRail.setStrokeLineCap(StrokeLineCap.ROUND);
-        
+        double len = Math.sqrt(dx * dx + dy * dy); double nx = -dy / len * (width / 2); double ny = dx / len * (width / 2);
+        Line leftRail = new Line(x1 - nx, y1 - ny, x2 - nx, y2 - ny); leftRail.setStrokeWidth(6); leftRail.setStroke(Color.SADDLEBROWN); leftRail.setStrokeLineCap(StrokeLineCap.ROUND);
+        Line rightRail = new Line(x1 + nx, y1 + ny, x2 + nx, y2 + ny); rightRail.setStrokeWidth(6); rightRail.setStroke(Color.SADDLEBROWN); rightRail.setStrokeLineCap(StrokeLineCap.ROUND);
         Group ladder = new Group(leftRail, rightRail);
         int steps = (int) (len / 20);
         for (int i = 1; i < steps; i++) {
             double ratio = (double) i / steps; double cx = x1 + dx * ratio; double cy = y1 + dy * ratio;
-            Line rung = new Line(cx - nx, cy - ny, cx + nx, cy + ny); 
-            rung.setStrokeWidth(4); rung.setStroke(Color.PERU); ladder.getChildren().add(rung);
+            Line rung = new Line(cx - nx, cy - ny, cx + nx, cy + ny); rung.setStrokeWidth(4); rung.setStroke(Color.PERU); ladder.getChildren().add(rung);
         }
         ladder.setEffect(new DropShadow(10, Color.BLACK)); objectLayer.getChildren().add(ladder);
     }
-    
     private void drawCartoonSnake(double headX, double headY, double tailX, double tailY) {
         double ctrlX1 = headX + (tailX - headX) * 0.3 + 50; double ctrlY1 = headY + (tailY - headY) * 0.1;
         double ctrlX2 = headX + (tailX - headX) * 0.7 - 50; double ctrlY2 = tailY - (tailY - headY) * 0.1;
-        
         CubicCurve body = new CubicCurve(headX, headY, ctrlX1, ctrlY1, ctrlX2, ctrlY2, tailX, tailY);
         body.setStrokeWidth(22); body.setStrokeLineCap(StrokeLineCap.ROUND); body.setFill(null);
         Stop[] stops = new Stop[] { new Stop(0, Color.LIMEGREEN), new Stop(0.5, Color.YELLOWGREEN), new Stop(1, Color.DARKGREEN)};
-        body.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.REFLECT, stops)); 
-        body.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.5)));
-        
+        body.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.REFLECT, stops)); body.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.5)));
         Group headGroup = createSnakeHead(headX, headY);
         objectLayer.getChildren().addAll(body, headGroup);
     }
-    
     private Group createSnakeHead(double x, double y) {
         Circle headShape = new Circle(14, Color.LIMEGREEN);
         Circle leftEye = new Circle(4, Color.WHITE); leftEye.setTranslateX(-5); leftEye.setTranslateY(-4);
@@ -226,11 +182,9 @@ public class BoardView extends StackPane {
         Path tongue = new Path(); tongue.getElements().addAll(new MoveTo(0, 5), new LineTo(0, 12), new LineTo(-3, 16), new MoveTo(0, 12), new LineTo(3, 16));
         tongue.setStroke(Color.RED); tongue.setStrokeWidth(2);
         Group head = new Group(tongue, headShape, leftEye, rightEye, leftPupil, rightPupil);
-        head.setLayoutX(x); head.setLayoutY(y); head.setRotate(15); 
-        head.setEffect(new DropShadow(5, Color.BLACK));
+        head.setLayoutX(x); head.setLayoutY(y); head.setRotate(15); head.setEffect(new DropShadow(5, Color.BLACK));
         return head;
     }
-    
     private void buildPlayers() {
         Color[] colors = {Color.RED, Color.BLUE, Color.ORANGE, Color.PURPLE};
         List<Player> modelPlayers = engine.getPlayers();
@@ -240,31 +194,19 @@ public class BoardView extends StackPane {
             Circle base = new Circle(12, c.darker()); Circle top = new Circle(8, c.brighter()); top.setTranslateY(-5);
             Group pawn = new Group(base, top); pawn.setEffect(new DropShadow(10, Color.BLACK));
             playerTokens.put(mp, pawn); playerLayer.getChildren().add(pawn);
-            
             moveInstant(pawn, Math.max(1, mp.getPosition()), mp);
         }
     }
-
     private void buildUI() {
         uiSideBar.setPadding(new Insets(20));
         uiSideBar.setAlignment(Pos.TOP_CENTER);
         uiSideBar.setPrefWidth(300);
-        
-        turnLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
-        turnLabel.setTextFill(Color.WHITE);
+        turnLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22)); turnLabel.setTextFill(Color.WHITE);
         turnLabel.setStyle("-fx-background-color: rgba(0,0,0,0.3); -fx-padding: 10; -fx-background-radius: 10;");
-
-        deckVisual = createDeckVisual();
-        deckVisual.setOnMouseClicked(e -> handleDeckClick());
-        deckVisual.setOnMouseEntered(e -> deckVisual.setEffect(new Glow(0.5)));
-        deckVisual.setOnMouseExited(e -> deckVisual.setEffect(null));
-        
-        Label instructions = new Label("Click Deck to Draw");
-        instructions.setTextFill(Color.LIGHTGRAY);
-
-        VBox inventoryBox = new VBox(10);
-        inventoryBox.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-padding: 10; -fx-background-radius: 10;");
-        
+        deckVisual = createDeckVisual(); deckVisual.setOnMouseClicked(e -> handleDeckClick());
+        deckVisual.setOnMouseEntered(e -> deckVisual.setEffect(new Glow(0.5))); deckVisual.setOnMouseExited(e -> deckVisual.setEffect(null));
+        Label instructions = new Label("Click Deck to Draw"); instructions.setTextFill(Color.LIGHTGRAY);
+        VBox inventoryBox = new VBox(10); inventoryBox.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-padding: 10; -fx-background-radius: 10;");
         for(Player p : engine.getPlayers()) {
             HBox row = new HBox(10); row.setAlignment(Pos.CENTER_LEFT);
             Label name = new Label(p.getName()); name.setTextFill(Color.WHITE); name.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -273,7 +215,6 @@ public class BoardView extends StackPane {
         }
         uiSideBar.getChildren().addAll(turnLabel, deckVisual, instructions, new Label(""), new Label("Inventories:"), inventoryBox);
     }
-
     private void refreshInventoryUI() {
         for(Player p : engine.getPlayers()) {
             HBox container = inventoryDisplays.get(p); container.getChildren().clear();
@@ -286,7 +227,7 @@ public class BoardView extends StackPane {
         }
     }
 
-    /* ================= GAME LOGIC ================= */
+    /* ================= GAMEPLAY LOGIC (Cleaned) ================= */
 
     private void handleDeckClick() {
         if (isAnimating || engine.isGameOver()) return;
@@ -363,132 +304,95 @@ public class BoardView extends StackPane {
         fade.setToValue(0);
         fade.setOnFinished(e -> {
             cardAnimationLayer.getChildren().remove(card);
-            performMove(steps);
+            executeMove(steps); // Calls our new logic-driven method
         });
         fade.play();
     }
 
-    
-    private void performMove(int steps) { // i modified here for the bounce back
+    // === NEW LOGIC: Use MoveResult to drive animations ===
+    private void executeMove(int steps) {
         Player currentPlayer = engine.getCurrentPlayer();
-        int currentPos = Math.max(1, currentPlayer.getPosition());
         Group token = playerTokens.get(currentPlayer);
 
+        // 1. Get the Result from GameRules
+        MoveResult result = GameRules.analyzeMove(
+            currentPlayer, 
+            steps, 
+            engine.getBoard(), 
+            engine.getPlayers()
+        );
+
+        // 2. Animate the Walking Part
         SequentialTransition sequence = new SequentialTransition();
-        List<Integer> path = new ArrayList<>();
         
-        if (currentPos + steps <= 100) {
-            
-            for ( int i=1 ; i<=steps; i++ ) {
-
-                path.add( currentPos + i );
-            }
-        } 
-        
-        else {
-            
-            int stepsTo100 = 100 - currentPos;
-            for( int i= 1; i <= stepsTo100; i++ ) {
-
-                path.add(currentPos + i);
-
-            }
-            for( int i=1 ; i <=stepsTo100; i++ ) {
-
-                path.add(100 - i);
-            }
-        }
-
-        // Build Animation Sequence from Path
-        for (int targetTile : path) {
+        for (int targetTile : result.getWalkPath()) {
             double[] c = getCenterWithOffset(targetTile, currentPlayer);
-            
-            TranslateTransition moveX = new TranslateTransition(Duration.millis(250), token); 
-            moveX.setToX(c[0]);
-            
-            TranslateTransition moveY = new TranslateTransition(Duration.millis(250), token); 
-            moveY.setToY(c[1]);
-            
+            TranslateTransition moveX = new TranslateTransition(Duration.millis(250), token); moveX.setToX(c[0]);
+            TranslateTransition moveY = new TranslateTransition(Duration.millis(250), token); moveY.setToY(c[1]);
             ParallelTransition step = new ParallelTransition(moveX, moveY);
             step.setOnFinished(evt -> spawnDust(token));
             sequence.getChildren().add(step);
         }
 
-        sequence.setOnFinished(e -> {
-            // The final visual position is the last tile in our path
-            int finalVisualPos = path.isEmpty() ? currentPos : path.get(path.size() - 1);
-            
-            // Sync with backend logic
-            checkLandingLogic(currentPlayer, token, finalVisualPos);
-        });
+        // 3. Handle what happens after walking
+        sequence.setOnFinished(e -> handleEventLogic(currentPlayer, token, result));
         sequence.play();
     }
 
-    private void checkLandingLogic(Player p, Group token, int target) {
-        int finalDest = engine.getBoard().checkJump(target);
-
-        if (finalDest > target) {
-            // Ladder Logic
-            Player blocker = null;
-            for(Player opp : engine.getPlayers()) {
-                if(opp != p && opp.hasAbility(Ability.BLOCK_LADDER)) {
-                    blocker = opp; break;
-                }
-            }
+    private void handleEventLogic(Player p, Group token, MoveResult result) {
+        if (result.isLadder()) {
+            // Check if there is a blocker to ASK
+            Player blocker = result.getPotentialBlocker();
             if (blocker != null) {
-                final Player finalBlocker = blocker;
-                showDialog("Wait! " + finalBlocker.getName(), "Block " + p.getName() + "'s ladder?", 
+                // UI Interaction Required
+                showDialog("Wait! " + blocker.getName(), "Block " + p.getName() + "'s ladder?", 
                     () -> {
-                        finalBlocker.useAbility(Ability.BLOCK_LADDER);
+                        // YES - Blocked
+                        blocker.useAbility(Ability.BLOCK_LADDER);
                         refreshInventoryUI();
-                        animatePunishment(p, token, target - 1);
+                        // Push back 1 step from where they are standing
+                        animatePunishment(p, token, result.getPreJumpPosition() - 1);
                     }, 
-                    () -> animateJump(p, token, finalDest, false)
+                    () -> {
+                        // NO - Allow Climb
+                        animateJump(p, token, result.getFinalPosition(), false);
+                    }
                 );
             } else {
-                animateJump(p, token, finalDest, false);
+                // No blocker, just climb
+                animateJump(p, token, result.getFinalPosition(), false);
             }
-        } else if (finalDest < target) {
-            // Snake
-            animateJump(p, token, finalDest, true);
-        } else {
-            finalizeTurn(p, target);
+        } 
+        else if (result.isSnake()) {
+            // Snake Logic
+            animateJump(p, token, result.getFinalPosition(), true);
+        } 
+        else {
+            // Normal Tile
+            finalizeTurn(p, result.getFinalPosition());
         }
     }
 
-    /* ================= ANIMATIONS ================= */
+    /* ================= ANIMATIONS & VISUALS ================= */
 
     private void showLootAnimation(Ability ability) {
         StackPane lootIcon = new StackPane();
         Rectangle bg = new Rectangle(80, 80, Color.GOLD);
         bg.setArcWidth(20); bg.setArcHeight(20); bg.setEffect(new DropShadow(20, Color.GOLD));
-        
         Label emoji = new Label(ability.getIcon()); emoji.setFont(Font.font(40));
         Label text = new Label(ability.getName()); text.setFont(Font.font("Arial", FontWeight.BOLD, 12)); text.setTranslateY(25);
         lootIcon.getChildren().addAll(bg, emoji, text);
-        
         lootIcon.setTranslateX(450); lootIcon.setTranslateY(350);
         lootIcon.setScaleX(0); lootIcon.setScaleY(0);
         cardAnimationLayer.getChildren().add(lootIcon);
 
-        
-        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(500), lootIcon);
-        scaleUp.setToX(1.5); scaleUp.setToY(1.5);
-        
-        RotateTransition spin = new RotateTransition(Duration.millis(500), lootIcon);
-        spin.setByAngle(360);
-        
+        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(500), lootIcon); scaleUp.setToX(1.5); scaleUp.setToY(1.5);
+        RotateTransition spin = new RotateTransition(Duration.millis(500), lootIcon); spin.setByAngle(360);
         ParallelTransition appear = new ParallelTransition(scaleUp, spin);
         PauseTransition wait = new PauseTransition(Duration.millis(800));
-
-        TranslateTransition fly = new TranslateTransition(Duration.millis(600), lootIcon);
-        fly.setToX(400); fly.setToY(-300);
-        
-        ScaleTransition shrink = new ScaleTransition(Duration.millis(600), lootIcon);
-        shrink.setToX(0); shrink.setToY(0);
-        
+        TranslateTransition fly = new TranslateTransition(Duration.millis(600), lootIcon); fly.setToX(400); fly.setToY(-300);
+        ScaleTransition shrink = new ScaleTransition(Duration.millis(600), lootIcon); shrink.setToX(0); shrink.setToY(0);
         ParallelTransition disappear = new ParallelTransition(fly, shrink);
-
         SequentialTransition seq = new SequentialTransition(appear, wait, disappear);
         seq.setOnFinished(e -> cardAnimationLayer.getChildren().remove(lootIcon));
         seq.play();
@@ -496,13 +400,10 @@ public class BoardView extends StackPane {
 
     private void animatePunishment(Player p, Group token, int punsihedPos) {
         double[] c = getCenterWithOffset(punsihedPos, p);
-        
         TranslateTransition shake = new TranslateTransition(Duration.millis(100), token);
         shake.setByX(10); shake.setAutoReverse(true); shake.setCycleCount(4);
-        
         TranslateTransition moveBack = new TranslateTransition(Duration.millis(500), token);
         moveBack.setToX(c[0]); moveBack.setToY(c[1]);
-        
         SequentialTransition seq = new SequentialTransition(shake, moveBack);
         seq.setOnFinished(e -> { spawnWaterSplash(token, 5); finalizeTurn(p, punsihedPos); });
         seq.play();
@@ -636,40 +537,24 @@ public class BoardView extends StackPane {
         fireworks.setCycleCount(20); fireworks.play();
     }
     
-    
     private double[] getCenter(int position) {
         int row = (position - 1) / SIZE;
         int col;
-        
-        if (row % 2 == 0) {
-           
-            col = (position - 1) % SIZE;
-        } else {
-            
-            col = SIZE - 1 - ((position - 1) % SIZE);
-        }
-
-        // x = Margin + Col*TileSize + HalfTile
+        if (row % 2 == 0) col = (position - 1) % SIZE;
+        else col = SIZE - 1 - ((position - 1) % SIZE);
         double x = 50 + col * TILE + TILE / 2.0;
-        
-        // y = Margin + (TotalRows - RowIndex - 1)*TileSize + HalfTile
         double y = 50 + (SIZE - row - 1) * TILE + TILE / 2.0;
         return new double[]{x, y};
     }
     
-    
     private double[] getCenterWithOffset(int position, Player p) {
         double[] center = getCenter(position);
-        
         int playerIndex = engine.getPlayers().indexOf(p);
-        double offsetX = 0;
-        double offsetY = 0;
-        
+        double offsetX = 0; double offsetY = 0;
         if (playerIndex == 0) { offsetX = -15; offsetY = -15; }
         else if (playerIndex == 1) { offsetX = 15; offsetY = -15; }
         else if (playerIndex == 2) { offsetX = -15; offsetY = 15; }
         else if (playerIndex == 3) { offsetX = 15; offsetY = 15; }
-        
         return new double[] { center[0] + offsetX, center[1] + offsetY };
     }
 }

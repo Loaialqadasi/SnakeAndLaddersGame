@@ -18,7 +18,9 @@ public class GameEngin {
     private final Random random = new Random();
 
     private int currPlayerIndex = 0;
+
     private boolean gameover = false;
+
 
     public GameEngin(List<String> playerNames) {
         this.deck = new Deck(6);
@@ -36,18 +38,23 @@ public class GameEngin {
 
     public int rollDice() {
         Card card = deck.draw();
+
         return card.getValue();
     }
 
-    // New: 30% Chance to get a random card
+    // this to make getting a feature card by 10% each 
     public Ability tryLootDrop() {
         int chance = random.nextInt(100);
-        if (chance < 15) { // 15% Double Move
+
+        if ( chance  < 10 ) { 
             return Ability.DOUBLE_MOVE;
-        } else if (chance < 30) { // 15% Ladder Block
+        } 
+        
+        else if ( chance < 10 ) { 
             return Ability.BLOCK_LADDER;
         }
-        return null; // No loot
+
+        return null; 
     }
 
     public void switchTurn() {
@@ -56,6 +63,14 @@ public class GameEngin {
         }
     }
 
-    public void setGameOver(boolean status) { this.gameover = status; }
-    public boolean isGameOver() { return gameover; }
+
+
+    public void setGameOver(boolean status) {
+         this.gameover = status ;
+         }
+
+    public boolean isGameOver() {
+         return gameover;
+         }
+
 }

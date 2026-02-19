@@ -15,7 +15,6 @@ public class Board {
     }
 
     private void initializeSnakes() {
-        // Adjusted for Zigzag board flow if necessary, but logic remains ID-based
         snakes.put(97, 73); snakes.put(70, 55); snakes.put(52, 42);
         snakes.put(25, 12); snakes.put(85, 74); snakes.put(36, 6);
         snakes.put(65, 59); snakes.put(91, 72);
@@ -40,14 +39,19 @@ public class Board {
         return position;
     }
 
-    // === CHANGE 1: BOUNCE BACK LOGIC ===
+    // === UPDATED: CLASSIC BOUNCE BACK LOGIC ===
     public int resolvePosition(int currentPosition, int move) {
         int tentativePosition = currentPosition + move;
         
         if (tentativePosition > FINAL_POSITION) {
-            // Calculate bounce
+            // Calculate how far past 100 we went
             int excess = tentativePosition - FINAL_POSITION;
-            return FINAL_POSITION - excess;
+            
+            // Bounce back: 100 - excess
+            int landPosition = FINAL_POSITION - excess;
+            
+            // Check if the landing spot has a snake or ladder
+            return checkJump(landPosition);
         }
         
         return checkJump(tentativePosition);
