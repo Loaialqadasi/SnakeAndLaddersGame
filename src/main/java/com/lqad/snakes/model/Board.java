@@ -1,7 +1,7 @@
 package com.lqad.snakes.model;
 
-import java.util.HashMap; // implementation
-import java.util.Map; // abstract (get, put, remove, containKey)
+import java.util.HashMap;
+import java.util.Map;
 
 public class Board {
 
@@ -15,6 +15,7 @@ public class Board {
     }
 
     private void initializeSnakes() {
+        // Adjusted for Zigzag board flow if necessary, but logic remains ID-based
         snakes.put(97, 73); snakes.put(70, 55); snakes.put(52, 42);
         snakes.put(25, 12); snakes.put(85, 74); snakes.put(36, 6);
         snakes.put(65, 59); snakes.put(91, 72);
@@ -26,26 +27,30 @@ public class Board {
         ladders.put(33, 49); ladders.put(77, 93);
     }
 
-    public Map<Integer, Integer> getAllSnakesAndLadders() { // i get this from ai hehe
+    public Map<Integer, Integer> getAllSnakesAndLadders() {
         Map<Integer, Integer> combined = new HashMap<>();
         combined.putAll(snakes);
         combined.putAll(ladders);
         return combined;
     }
 
-    public int checkJump(int position) { // if ture then snakes get end position or if ladder true then get ladder end if no snake or ladder on the place then return position as it is
+    public int checkJump(int position) {
         if (snakes.containsKey(position)) return snakes.get(position);
         if (ladders.containsKey(position)) return ladders.get(position);
         return position;
     }
 
-    // If it moves past 100, don't move
+    // === CHANGE 1: BOUNCE BACK LOGIC ===
     public int resolvePosition(int currentPosition, int move) {
-        int winsOrStayAtPlace = currentPosition + move;
-        if (winsOrStayAtPlace > FINAL_POSITION) {
-            return currentPosition;
+        int tentativePosition = currentPosition + move;
+        
+        if (tentativePosition > FINAL_POSITION) {
+            // Calculate bounce
+            int excess = tentativePosition - FINAL_POSITION;
+            return FINAL_POSITION - excess;
         }
-        return checkJump(winsOrStayAtPlace);
+        
+        return checkJump(tentativePosition);
     }
 
     public int getFinalPosition() { return FINAL_POSITION; }
