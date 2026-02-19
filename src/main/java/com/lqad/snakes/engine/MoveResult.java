@@ -22,10 +22,33 @@ public class MoveResult {
         this.potentialBlocker = potentialBlocker;
     }
 
-    public List<Integer> getWalkPath() { return walkPath; }
-    public int getPreJumpPosition() { return preJumpPosition; }
-    public int getFinalPosition() { return finalPosition; }
-    public boolean isLadder() { return isLadder; }
-    public boolean isSnake() { return isSnake; }
-    public Player getPotentialBlocker() { return potentialBlocker; }
+    public List<Integer> getWalkPath(){
+         return walkPath;
+        
+        }
+
+    public int getPreJumpPosition() { 
+        
+        return preJumpPosition;
+     }
+
+    public int getFinalPosition() {
+        
+        return finalPosition;
+     }
+
+    public boolean isLadder() {
+         return isLadder;
+         }
+
+    public boolean isSnake() {
+        
+        return isSnake;
+     }
+
+
+    public Player getPotentialBlocker() {
+        
+        return potentialBlocker;
+     }
 }

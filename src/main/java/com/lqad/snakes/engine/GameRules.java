@@ -19,7 +19,19 @@ public class GameRules {
         
         List<Integer> path = calculateBouncePath(currentPos, diceRoll);
       
-        int landSpot = path.isEmpty() ? currentPos : path.get(path.size() - 1);
+       int landSpot;
+
+            if ( path.isEmpty())  {
+                landSpot = currentPos;
+
+            } 
+            
+            else {
+                
+                landSpot = path.get(path.size() - 1);
+                
+            }
+
         
         
         int destSpot = board.checkJump(landSpot);
@@ -50,7 +62,7 @@ public class GameRules {
             int stepsForward = WIN_POINT - currentPos;
             int stepsBackward = cardValue - stepsForward;
 
-            // Forward to 100
+           
             for (int i = 1; i <= stepsForward; i++) {
                 path.add(currentPos + i);
             }

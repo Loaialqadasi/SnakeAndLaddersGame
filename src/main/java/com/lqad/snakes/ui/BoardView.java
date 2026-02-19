@@ -2,7 +2,7 @@ package com.lqad.snakes.ui;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map; // Import new file
+import java.util.Map; 
 import java.util.Random;
 
 import com.lqad.snakes.engine.GameEngin;
@@ -115,11 +115,7 @@ public class BoardView extends StackPane {
         getChildren().addAll(layout, dialogOverlay, victoryOverlay);
     }
 
-    // ... [KEEP ALL SETUP METHODS: buildBackground, buildBoard, drawObjects, etc.] ...
-    // ... Copy them from previous version, they are purely visual and fine ...
-    // ... INCLUDING: drawRealisticLadder, drawCartoonSnake, createSnakeHead, buildPlayers ...
-    
-    /* ================= PASTE THE VISUAL SETUP METHODS HERE ================= */
+   
     private void buildBackground() {
         Rectangle bg = new Rectangle(1200, 800);
         bg.setFill(new RadialGradient(0, 0, 0.5, 0.5, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#2b5876")), new Stop(1, Color.web("#4e4376"))));
@@ -227,7 +223,7 @@ public class BoardView extends StackPane {
         }
     }
 
-    /* ================= GAMEPLAY LOGIC (Cleaned) ================= */
+    
 
     private void handleDeckClick() {
         if (isAnimating || engine.isGameOver()) return;
@@ -304,17 +300,18 @@ public class BoardView extends StackPane {
         fade.setToValue(0);
         fade.setOnFinished(e -> {
             cardAnimationLayer.getChildren().remove(card);
-            executeMove(steps); // Calls our new logic-driven method
+            executeMove(steps);
+        
         });
         fade.play();
     }
 
-    // === NEW LOGIC: Use MoveResult to drive animations ===
+   
     private void executeMove(int steps) {
         Player currentPlayer = engine.getCurrentPlayer();
         Group token = playerTokens.get(currentPlayer);
 
-        // 1. Get the Result from GameRules
+       
         MoveResult result = GameRules.analyzeMove(
             currentPlayer, 
             steps, 
@@ -322,7 +319,7 @@ public class BoardView extends StackPane {
             engine.getPlayers()
         );
 
-        // 2. Animate the Walking Part
+        
         SequentialTransition sequence = new SequentialTransition();
         
         for (int targetTile : result.getWalkPath()) {
@@ -334,47 +331,47 @@ public class BoardView extends StackPane {
             sequence.getChildren().add(step);
         }
 
-        // 3. Handle what happens after walking
+       
         sequence.setOnFinished(e -> handleEventLogic(currentPlayer, token, result));
         sequence.play();
     }
 
     private void handleEventLogic(Player p, Group token, MoveResult result) {
         if (result.isLadder()) {
-            // Check if there is a blocker to ASK
+            
+
             Player blocker = result.getPotentialBlocker();
             if (blocker != null) {
-                // UI Interaction Required
+                
                 showDialog("Wait! " + blocker.getName(), "Block " + p.getName() + "'s ladder?", 
                     () -> {
-                        // YES - Blocked
+                        
                         blocker.useAbility(Ability.BLOCK_LADDER);
                         refreshInventoryUI();
-                        // Push back 1 step from where they are standing
+                        
                         animatePunishment(p, token, result.getPreJumpPosition() - 1);
                     }, 
                     () -> {
-                        // NO - Allow Climb
+                       
                         animateJump(p, token, result.getFinalPosition(), false);
                     }
                 );
             } else {
-                // No blocker, just climb
+                
                 animateJump(p, token, result.getFinalPosition(), false);
             }
         } 
         else if (result.isSnake()) {
-            // Snake Logic
+            
             animateJump(p, token, result.getFinalPosition(), true);
         } 
         else {
-            // Normal Tile
+            
             finalizeTurn(p, result.getFinalPosition());
         }
     }
 
-    /* ================= ANIMATIONS & VISUALS ================= */
-
+    
     private void showLootAnimation(Ability ability) {
         StackPane lootIcon = new StackPane();
         Rectangle bg = new Rectangle(80, 80, Color.GOLD);
