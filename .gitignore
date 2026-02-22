@@ -1,0 +1,68 @@
+#######################################
+# Java / Maven
+#######################################
+
+# Maven build directory
+target/
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# HS_ERR files
+hs_err_pid*
+replay_pid*
+
+#######################################
+# IDEs
+#######################################
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+#######################################
+# OS Files
+#######################################
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+#######################################
+# Environment / Misc
+#######################################
+
+# Environment variables
+.env
+.env.*
+
+# Temporary files
+*.swp
+*.swo
+*~
