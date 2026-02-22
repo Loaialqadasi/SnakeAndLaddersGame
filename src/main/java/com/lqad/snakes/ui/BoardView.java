@@ -122,12 +122,31 @@ public class BoardView extends StackPane {
         backgroundLayer.getChildren().add(bg);
     }
     private void buildBoard() {
+
         Group gridGroup = new Group();
+
         for (int r = 0; r < SIZE; r++) {
-            for (int c = 0; c < SIZE; c++) {
-                int number = (r % 2 == 0) ? r * SIZE + c + 1 : (r + 1) * SIZE - c;
+
+            for (int c = 0; c < SIZE; c++) { // c++ or java? who knows
+
+                int number;
+
+                    if ( r % 2 == 0 ) { // i made the new changes here so i can make zikzak movement
+
+                        number = r * SIZE + c + 1;
+                    } 
+                    
+                    else {
+
+                        number = (r + 1) * SIZE - c;
+                        
+                    }
+
+
                 Rectangle tile = new Rectangle(TILE - 4, TILE - 4); tile.setArcWidth(20); tile.setArcHeight(20);
                 boolean isEven = (r + c) % 2 == 0;
+
+
                 tile.setFill(isEven ? new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ffffff")), new Stop(1, Color.web("#e6e6e6"))) : new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#d4fc79")), new Stop(1, Color.web("#96e6a1"))));
                 tile.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.2)));
                 Label label = new Label(String.valueOf(number)); label.setFont(Font.font("Verdana", FontWeight.BOLD, 14)); label.setTextFill(Color.rgb(0,0,0,0.5));
@@ -323,7 +342,8 @@ public class BoardView extends StackPane {
         SequentialTransition sequence = new SequentialTransition();
         
         for (int targetTile : result.getWalkPath()) {
-            double[] c = getCenterWithOffset(targetTile, currentPlayer);
+            double[] c = getCenterWithOffset(targetTile, currentPlayer); // i would declare it at the end of this file 
+
             TranslateTransition moveX = new TranslateTransition(Duration.millis(250), token); moveX.setToX(c[0]);
             TranslateTransition moveY = new TranslateTransition(Duration.millis(250), token); moveY.setToY(c[1]);
             ParallelTransition step = new ParallelTransition(moveX, moveY);
@@ -534,7 +554,7 @@ public class BoardView extends StackPane {
         fireworks.setCycleCount(20); fireworks.play();
     }
     
-    private double[] getCenter(int position) {
+    private double[] getCenter(int position) { 
         int row = (position - 1) / SIZE;
         int col;
         if (row % 2 == 0) col = (position - 1) % SIZE;
@@ -544,10 +564,13 @@ public class BoardView extends StackPane {
         return new double[]{x, y};
     }
     
-    private double[] getCenterWithOffset(int position, Player p) {
+    private double[] getCenterWithOffset(int position, Player p) { // i let the ai declare it :(
         double[] center = getCenter(position);
+
         int playerIndex = engine.getPlayers().indexOf(p);
+
         double offsetX = 0; double offsetY = 0;
+        
         if (playerIndex == 0) { offsetX = -15; offsetY = -15; }
         else if (playerIndex == 1) { offsetX = 15; offsetY = -15; }
         else if (playerIndex == 2) { offsetX = -15; offsetY = 15; }
