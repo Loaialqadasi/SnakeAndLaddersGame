@@ -50,7 +50,7 @@ public class GameEngin {
             return Ability.DOUBLE_MOVE;
         } 
         
-        else if ( chance < 10 ) { 
+        else if ( chance < 20 ) { 
             return Ability.BLOCK_LADDER;
         }
 
