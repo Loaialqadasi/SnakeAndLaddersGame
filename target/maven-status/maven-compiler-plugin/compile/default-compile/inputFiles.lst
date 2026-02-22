@@ -1,5 +1,7 @@
 /home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/Main.java
 /home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/engine/GameEngin.java
+/home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/engine/GameRules.java
+/home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/engine/MoveResult.java
 /home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/model/Ability.java
 /home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/model/Board.java
 /home/loai/Desktop/Snakes and Ladders/snakes/src/main/java/com/lqad/snakes/model/Card.java

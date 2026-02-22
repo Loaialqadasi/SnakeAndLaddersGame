@@ -2,10 +2,12 @@ package com.lqad.snakes.ui;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Map; 
 import java.util.Random;
 
 import com.lqad.snakes.engine.GameEngin;
+import com.lqad.snakes.engine.GameRules;
+import com.lqad.snakes.engine.MoveResult;
 import com.lqad.snakes.model.Ability;
 import com.lqad.snakes.model.Player;
 
@@ -52,26 +54,26 @@ import javafx.util.Duration;
 
 public class BoardView extends StackPane {
 
-    private static final int SIZE = 10;  //10*10 grid
+    private static final int SIZE = 10;
     private static final int TILE = 70;
 
     private final GameEngin engine;
     private final Map<Integer, Integer> snakesAndLadders;
 
-    // LAYERS 
-    private final Pane backgroundLayer = new Pane(); // step by step
-    private final Pane boardLayer      = new Pane();
-    private final Pane objectLayer     = new Pane();
-    private final Pane particleLayer   = new Pane();
-    private final Pane playerLayer     = new Pane();
+    // LAYERS
+    private final Pane backgroundLayer = new Pane();
+    private final Pane boardLayer = new Pane();
+    private final Pane objectLayer = new Pane();
+    private final Pane particleLayer = new Pane();
+    private final Pane playerLayer = new Pane();
     
     // UI LAYERS
-    private final VBox sideBar = new VBox(20); // stack vertically with 20px spaces like Player label and the deck
-    private final Pane cardAnimationLayer = new Pane(); // Pane bc of free movement and no layput interface
-    private final StackPane victoryOverlayer = new StackPane(); // StackPane bc Full screen show, exband a full size, centered text 
-    private final StackPane dialogOverlayer = new StackPane();
+    private final VBox uiSideBar = new VBox(20);
+    private final Pane cardAnimationLayer = new Pane();
+    private final StackPane victoryOverlay = new StackPane();
+    private final StackPane dialogOverlay = new StackPane();
 
-    // GAME DATA
+    // DATA
     private final Map<Player, Group> playerTokens = new HashMap<>();
     private final Map<Player, HBox> inventoryDisplays = new HashMap<>();
     private final Label turnLabel = new Label();
@@ -91,68 +93,70 @@ public class BoardView extends StackPane {
         drawObjects();
         buildPlayers();
         buildUI();
-        buildvictoryOverlayer();
-        builddialogOverlayer();
+        buildVictoryOverlay();
+        buildDialogOverlay();
         updateTurnLabel();
 
-        // Stacking layers in order: Bottom -> Top
         StackPane gameLayers = new StackPane(
-                backgroundLayer,
-                boardLayer,
-                objectLayer,
-                particleLayer,
-                playerLayer
+                backgroundLayer, boardLayer, objectLayer, particleLayer, playerLayer
         );
 
         BorderPane layout = new BorderPane();
         layout.setCenter(gameLayers);
         
-        StackPane rightPane = new StackPane(sideBar, cardAnimationLayer);
+        StackPane rightPane = new StackPane(uiSideBar, cardAnimationLayer);
         rightPane.setAlignment(Pos.TOP_LEFT);
         rightPane.setPickOnBounds(false); 
-        sideBar.setPickOnBounds(true);
+        uiSideBar.setPickOnBounds(true);
         cardAnimationLayer.setPickOnBounds(false);
         
         layout.setRight(rightPane);
 
-        getChildren().addAll(layout, dialogOverlayer, victoryOverlayer);
+        getChildren().addAll(layout, dialogOverlay, victoryOverlay);
     }
 
-    /* ================= SETUP ================= */
-    
-    private void buildBackground() { // Important Note: i hate this i have done this mostly by AI since i do not know much about frontEnd 
+   
+    private void buildBackground() {
         Rectangle bg = new Rectangle(1200, 800);
-        bg.setFill(new RadialGradient(0, 0, 0.5, 0.5, 1, true, CycleMethod.NO_CYCLE, 
-            new Stop(0, Color.web("#2b5876")), new Stop(1, Color.web("#4e4376"))));
+        bg.setFill(new RadialGradient(0, 0, 0.5, 0.5, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#2b5876")), new Stop(1, Color.web("#4e4376"))));
         backgroundLayer.getChildren().add(bg);
     }
-    
     private void buildBoard() {
+
         Group gridGroup = new Group();
+
         for (int r = 0; r < SIZE; r++) {
-            for (int c = 0; c < SIZE; c++) {
-                int number = r * SIZE + c + 1;
-                Rectangle tile = new Rectangle(TILE - 4, TILE - 4);
-                tile.setArcWidth(20); tile.setArcHeight(20);
+
+            for (int c = 0; c < SIZE; c++) { // c++ or java? who knows
+
+                int number;
+
+                    if ( r % 2 == 0 ) { // i made the new changes here so i can make zikzak movement
+
+                        number = r * SIZE + c + 1;
+                    } 
+                    
+                    else {
+
+                        number = (r + 1) * SIZE - c;
+                        
+                    }
+
+
+                Rectangle tile = new Rectangle(TILE - 4, TILE - 4); tile.setArcWidth(20); tile.setArcHeight(20);
                 boolean isEven = (r + c) % 2 == 0;
-                tile.setFill(isEven 
-                    ? new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ffffff")), new Stop(1, Color.web("#e6e6e6"))) 
-                    : new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#d4fc79")), new Stop(1, Color.web("#96e6a1"))));
+
+
+                tile.setFill(isEven ? new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ffffff")), new Stop(1, Color.web("#e6e6e6"))) : new LinearGradient(0,0,1,1,true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#d4fc79")), new Stop(1, Color.web("#96e6a1"))));
                 tile.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.2)));
-                
-                Label label = new Label(String.valueOf(number));
-                label.setFont(Font.font("Verdana", FontWeight.BOLD, 14));
-                label.setTextFill(Color.rgb(0,0,0,0.5));
-                
-                StackPane cell = new StackPane(tile, label);
-                cell.setLayoutX(c * TILE); cell.setLayoutY((SIZE - r - 1) * TILE);
+                Label label = new Label(String.valueOf(number)); label.setFont(Font.font("Verdana", FontWeight.BOLD, 14)); label.setTextFill(Color.rgb(0,0,0,0.5));
+                StackPane cell = new StackPane(tile, label); cell.setLayoutX(c * TILE); cell.setLayoutY((SIZE - r - 1) * TILE);
                 gridGroup.getChildren().add(cell);
             }
         }
         gridGroup.setTranslateX(50); gridGroup.setTranslateY(50);
         boardLayer.getChildren().add(gridGroup);
     }
-
     private void drawObjects() {
         for (var entry : snakesAndLadders.entrySet()) {
             int start = entry.getKey(); int end = entry.getValue();
@@ -161,43 +165,29 @@ public class BoardView extends StackPane {
             else drawCartoonSnake(s[0], s[1], e[0], e[1]);
         }
     }
-    
     private void drawRealisticLadder(double x1, double y1, double x2, double y2) {
         double width = 25; double dx = x2 - x1; double dy = y2 - y1;
-        double len = Math.sqrt(dx * dx + dy * dy); 
-        double nx = -dy / len * (width / 2); double ny = dx / len * (width / 2);
-        
-        Line leftRail = new Line(x1 - nx, y1 - ny, x2 - nx, y2 - ny); 
-        leftRail.setStrokeWidth(6); leftRail.setStroke(Color.SADDLEBROWN); leftRail.setStrokeLineCap(StrokeLineCap.ROUND);
-        
-        Line rightRail = new Line(x1 + nx, y1 + ny, x2 + nx, y2 + ny); 
-        rightRail.setStrokeWidth(6); rightRail.setStroke(Color.SADDLEBROWN); rightRail.setStrokeLineCap(StrokeLineCap.ROUND);
-        
+        double len = Math.sqrt(dx * dx + dy * dy); double nx = -dy / len * (width / 2); double ny = dx / len * (width / 2);
+        Line leftRail = new Line(x1 - nx, y1 - ny, x2 - nx, y2 - ny); leftRail.setStrokeWidth(6); leftRail.setStroke(Color.SADDLEBROWN); leftRail.setStrokeLineCap(StrokeLineCap.ROUND);
+        Line rightRail = new Line(x1 + nx, y1 + ny, x2 + nx, y2 + ny); rightRail.setStrokeWidth(6); rightRail.setStroke(Color.SADDLEBROWN); rightRail.setStrokeLineCap(StrokeLineCap.ROUND);
         Group ladder = new Group(leftRail, rightRail);
         int steps = (int) (len / 20);
         for (int i = 1; i < steps; i++) {
             double ratio = (double) i / steps; double cx = x1 + dx * ratio; double cy = y1 + dy * ratio;
-            Line rung = new Line(cx - nx, cy - ny, cx + nx, cy + ny); 
-            rung.setStrokeWidth(4); rung.setStroke(Color.PERU); ladder.getChildren().add(rung);
+            Line rung = new Line(cx - nx, cy - ny, cx + nx, cy + ny); rung.setStrokeWidth(4); rung.setStroke(Color.PERU); ladder.getChildren().add(rung);
         }
         ladder.setEffect(new DropShadow(10, Color.BLACK)); objectLayer.getChildren().add(ladder);
     }
-    
     private void drawCartoonSnake(double headX, double headY, double tailX, double tailY) {
         double ctrlX1 = headX + (tailX - headX) * 0.3 + 50; double ctrlY1 = headY + (tailY - headY) * 0.1;
         double ctrlX2 = headX + (tailX - headX) * 0.7 - 50; double ctrlY2 = tailY - (tailY - headY) * 0.1;
-        
         CubicCurve body = new CubicCurve(headX, headY, ctrlX1, ctrlY1, ctrlX2, ctrlY2, tailX, tailY);
         body.setStrokeWidth(22); body.setStrokeLineCap(StrokeLineCap.ROUND); body.setFill(null);
         Stop[] stops = new Stop[] { new Stop(0, Color.LIMEGREEN), new Stop(0.5, Color.YELLOWGREEN), new Stop(1, Color.DARKGREEN)};
-        body.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.REFLECT, stops)); 
-        body.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.5)));
-        
-        Circle headShape = new Circle(14, Color.LIMEGREEN);
+        body.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.REFLECT, stops)); body.setEffect(new DropShadow(5, Color.rgb(0,0,0,0.5)));
         Group headGroup = createSnakeHead(headX, headY);
         objectLayer.getChildren().addAll(body, headGroup);
     }
-    
     private Group createSnakeHead(double x, double y) {
         Circle headShape = new Circle(14, Color.LIMEGREEN);
         Circle leftEye = new Circle(4, Color.WHITE); leftEye.setTranslateX(-5); leftEye.setTranslateY(-4);
@@ -207,11 +197,9 @@ public class BoardView extends StackPane {
         Path tongue = new Path(); tongue.getElements().addAll(new MoveTo(0, 5), new LineTo(0, 12), new LineTo(-3, 16), new MoveTo(0, 12), new LineTo(3, 16));
         tongue.setStroke(Color.RED); tongue.setStrokeWidth(2);
         Group head = new Group(tongue, headShape, leftEye, rightEye, leftPupil, rightPupil);
-        head.setLayoutX(x); head.setLayoutY(y); head.setRotate(15); 
-        head.setEffect(new DropShadow(5, Color.BLACK));
+        head.setLayoutX(x); head.setLayoutY(y); head.setRotate(15); head.setEffect(new DropShadow(5, Color.BLACK));
         return head;
     }
-    
     private void buildPlayers() {
         Color[] colors = {Color.RED, Color.BLUE, Color.ORANGE, Color.PURPLE};
         List<Player> modelPlayers = engine.getPlayers();
@@ -221,39 +209,27 @@ public class BoardView extends StackPane {
             Circle base = new Circle(12, c.darker()); Circle top = new Circle(8, c.brighter()); top.setTranslateY(-5);
             Group pawn = new Group(base, top); pawn.setEffect(new DropShadow(10, Color.BLACK));
             playerTokens.put(mp, pawn); playerLayer.getChildren().add(pawn);
-            moveInstant(pawn, Math.max(1, mp.getPosition()));
+            moveInstant(pawn, Math.max(1, mp.getPosition()), mp);
         }
     }
-
     private void buildUI() {
-        sideBar.setPadding(new Insets(20));
-        sideBar.setAlignment(Pos.TOP_CENTER);
-        sideBar.setPrefWidth(300);
-        
-        turnLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
-        turnLabel.setTextFill(Color.WHITE);
+        uiSideBar.setPadding(new Insets(20));
+        uiSideBar.setAlignment(Pos.TOP_CENTER);
+        uiSideBar.setPrefWidth(300);
+        turnLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22)); turnLabel.setTextFill(Color.WHITE);
         turnLabel.setStyle("-fx-background-color: rgba(0,0,0,0.3); -fx-padding: 10; -fx-background-radius: 10;");
-
-        deckVisual = createDeckVisual();
-        deckVisual.setOnMouseClicked(e -> handleDeckClick());
-        deckVisual.setOnMouseEntered(e -> deckVisual.setEffect(new Glow(0.5)));
-        deckVisual.setOnMouseExited(e -> deckVisual.setEffect(null));
-        
-        Label instructions = new Label("Click Deck to Draw");
-        instructions.setTextFill(Color.LIGHTGRAY);
-
-        VBox inventoryBox = new VBox(10);
-        inventoryBox.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-padding: 10; -fx-background-radius: 10;");
-        
+        deckVisual = createDeckVisual(); deckVisual.setOnMouseClicked(e -> handleDeckClick());
+        deckVisual.setOnMouseEntered(e -> deckVisual.setEffect(new Glow(0.5))); deckVisual.setOnMouseExited(e -> deckVisual.setEffect(null));
+        Label instructions = new Label("Click Deck to Draw"); instructions.setTextFill(Color.LIGHTGRAY);
+        VBox inventoryBox = new VBox(10); inventoryBox.setStyle("-fx-background-color: rgba(0,0,0,0.2); -fx-padding: 10; -fx-background-radius: 10;");
         for(Player p : engine.getPlayers()) {
             HBox row = new HBox(10); row.setAlignment(Pos.CENTER_LEFT);
             Label name = new Label(p.getName()); name.setTextFill(Color.WHITE); name.setFont(Font.font("Arial", FontWeight.BOLD, 14));
             HBox items = new HBox(5); inventoryDisplays.put(p, items);
             row.getChildren().addAll(name, items); inventoryBox.getChildren().add(row);
         }
-        sideBar.getChildren().addAll(turnLabel, deckVisual, instructions, new Label(""), new Label("Inventories:"), inventoryBox);
+        uiSideBar.getChildren().addAll(turnLabel, deckVisual, instructions, new Label(""), new Label("Inventories:"), inventoryBox);
     }
-
     private void refreshInventoryUI() {
         for(Player p : engine.getPlayers()) {
             HBox container = inventoryDisplays.get(p); container.getChildren().clear();
@@ -266,7 +242,7 @@ public class BoardView extends StackPane {
         }
     }
 
-    /* ================= GAME LOGIC ================= */
+    
 
     private void handleDeckClick() {
         if (isAnimating || engine.isGameOver()) return;
@@ -343,66 +319,31 @@ public class BoardView extends StackPane {
         fade.setToValue(0);
         fade.setOnFinished(e -> {
             cardAnimationLayer.getChildren().remove(card);
-            
-            // === LOGIC FIX: EXACT 100 CHECK ===
-            Player currentPlayer = engine.getCurrentPlayer();
-            int currentPos = Math.max(1, currentPlayer.getPosition());
-            
-            if (currentPos + steps > 100) {
-                // OVERSHOT! No movement.
-                showOvershotAnimation(playerTokens.get(currentPlayer));
-                // End turn after animation
-                PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                delay.setOnFinished(ev -> {
-                    engine.switchTurn();
-                    updateTurnLabel();
-                    isAnimating = false;
-                });
-                delay.play();
-            } else {
-                // Safe to move
-                performMove(steps);
-            }
+            executeMove(steps);
+        
         });
         fade.play();
     }
 
-    private void showOvershotAnimation(Group token) {
-        Label warning = new Label("TOO HIGH!");
-        warning.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 40));
-        warning.setTextFill(Color.RED);
-        warning.setStyle("-fx-effect: dropshadow(gaussian, white, 2, 1.0, 0, 0);");
-        
-        Point2D pos = token.localToScene(0,0);
-        Point2D rootPos = cardAnimationLayer.localToScene(0,0);
-        warning.setLayoutX(pos.getX() - rootPos.getX());
-        warning.setLayoutY(pos.getY() - rootPos.getY() - 50);
-        
-        cardAnimationLayer.getChildren().add(warning);
-        
-        TranslateTransition shake = new TranslateTransition(Duration.millis(100), warning);
-        shake.setByX(10); shake.setAutoReverse(true); shake.setCycleCount(6);
-        
-        FadeTransition fade = new FadeTransition(Duration.millis(500), warning);
-        fade.setFromValue(1); fade.setToValue(0);
-        fade.setDelay(Duration.millis(1000));
-        fade.setOnFinished(e -> cardAnimationLayer.getChildren().remove(warning));
-        
-        new SequentialTransition(shake, fade).play();
-    }
-
-    private void performMove(int steps) {
+   
+    private void executeMove(int steps) {
         Player currentPlayer = engine.getCurrentPlayer();
-        int currentPos = Math.max(1, currentPlayer.getPosition());
         Group token = playerTokens.get(currentPlayer);
 
-        SequentialTransition sequence = new SequentialTransition();
+       
+        MoveResult result = GameRules.analyzeMove(
+            currentPlayer, 
+            steps, 
+            engine.getBoard(), 
+            engine.getPlayers()
+        );
 
-        for (int i = 1; i <= steps; i++) {
-            int walkPos = currentPos + i;
-            if (walkPos > 100) break;
-            
-            double[] c = getCenter(walkPos);
+        
+        SequentialTransition sequence = new SequentialTransition();
+        
+        for (int targetTile : result.getWalkPath()) {
+            double[] c = getCenterWithOffset(targetTile, currentPlayer); // i would declare it at the end of this file 
+
             TranslateTransition moveX = new TranslateTransition(Duration.millis(250), token); moveX.setToX(c[0]);
             TranslateTransition moveY = new TranslateTransition(Duration.millis(250), token); moveY.setToY(c[1]);
             ParallelTransition step = new ParallelTransition(moveX, moveY);
@@ -410,128 +351,83 @@ public class BoardView extends StackPane {
             sequence.getChildren().add(step);
         }
 
-        sequence.setOnFinished(e -> {
-            int target = Math.min(currentPos + steps, 100);
-            checkLandingLogic(currentPlayer, token, target);
-        });
+       
+        sequence.setOnFinished(e -> handleEventLogic(currentPlayer, token, result));
         sequence.play();
     }
 
-    private void checkLandingLogic(Player p, Group token, int target) {
-        int finalDest = engine.getBoard().checkJump(target);
+    private void handleEventLogic(Player p, Group token, MoveResult result) {
+        if (result.isLadder()) {
+            
 
-        if (finalDest > target) {
-            // Ladder Logic (with Trap check)
-            Player blocker = null;
-            for(Player opp : engine.getPlayers()) {
-                if(opp != p && opp.hasAbility(Ability.BLOCK_LADDER)) {
-                    blocker = opp; break;
-                }
-            }
+            Player blocker = result.getPotentialBlocker();
             if (blocker != null) {
-                final Player finalBlocker = blocker;
-                showDialog("Wait! " + finalBlocker.getName(), "Block " + p.getName() + "'s ladder?", 
+                
+                showDialog("Wait! " + blocker.getName(), "Block " + p.getName() + "'s ladder?", 
                     () -> {
-                        finalBlocker.useAbility(Ability.BLOCK_LADDER);
+                        
+                        blocker.useAbility(Ability.BLOCK_LADDER);
                         refreshInventoryUI();
-                        animatePunishment(p, token, target - 1);
+                        
+                        animatePunishment(p, token, result.getPreJumpPosition() - 1);
                     }, 
-                    () -> animateJump(p, token, finalDest, false)
+                    () -> {
+                       
+                        animateJump(p, token, result.getFinalPosition(), false);
+                    }
                 );
             } else {
-                animateJump(p, token, finalDest, false);
+                
+                animateJump(p, token, result.getFinalPosition(), false);
             }
-        } else if (finalDest < target) {
-            // Snake
-            animateJump(p, token, finalDest, true);
-        } else {
-            finalizeTurn(p, target);
+        } 
+        else if (result.isSnake()) {
+            
+            animateJump(p, token, result.getFinalPosition(), true);
+        } 
+        else {
+            
+            finalizeTurn(p, result.getFinalPosition());
         }
     }
 
-    /* ================= ANIMATIONS & VISUALS ================= */
-
+    
     private void showLootAnimation(Ability ability) {
-        // 1. Create the Icon
         StackPane lootIcon = new StackPane();
         Rectangle bg = new Rectangle(80, 80, Color.GOLD);
-        bg.setArcWidth(20); bg.setArcHeight(20); 
-        bg.setEffect(new DropShadow(20, Color.GOLD));
-        
-        Label emoji = new Label(ability.getIcon()); 
-        emoji.setFont(Font.font(40));
-        
-        Label text = new Label(ability.getName()); 
-        text.setFont(Font.font("Arial", FontWeight.BOLD, 12)); 
-        text.setTranslateY(25);
-        
+        bg.setArcWidth(20); bg.setArcHeight(20); bg.setEffect(new DropShadow(20, Color.GOLD));
+        Label emoji = new Label(ability.getIcon()); emoji.setFont(Font.font(40));
+        Label text = new Label(ability.getName()); text.setFont(Font.font("Arial", FontWeight.BOLD, 12)); text.setTranslateY(25);
         lootIcon.getChildren().addAll(bg, emoji, text);
-        
-        // Position it
-        lootIcon.setTranslateX(450); 
-        lootIcon.setTranslateY(350);
-        lootIcon.setScaleX(0); 
-        lootIcon.setScaleY(0);
-        
+        lootIcon.setTranslateX(450); lootIcon.setTranslateY(350);
+        lootIcon.setScaleX(0); lootIcon.setScaleY(0);
         cardAnimationLayer.getChildren().add(lootIcon);
 
-        // 2. Define Animations explicitly (No double braces)
-        
-        // Phase 1: Appear and Spin
-        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(500), lootIcon);
-        scaleUp.setToX(1.5); 
-        scaleUp.setToY(1.5);
-        
-        RotateTransition spin = new RotateTransition(Duration.millis(500), lootIcon);
-        spin.setByAngle(360);
-        
+        ScaleTransition scaleUp = new ScaleTransition(Duration.millis(500), lootIcon); scaleUp.setToX(1.5); scaleUp.setToY(1.5);
+        RotateTransition spin = new RotateTransition(Duration.millis(500), lootIcon); spin.setByAngle(360);
         ParallelTransition appear = new ParallelTransition(scaleUp, spin);
-
-        // Phase 2: Wait
         PauseTransition wait = new PauseTransition(Duration.millis(800));
-
-        // Phase 3: Fly away and shrink
-        TranslateTransition fly = new TranslateTransition(Duration.millis(600), lootIcon);
-        fly.setToX(400); 
-        fly.setToY(-300);
-        
-        ScaleTransition shrink = new ScaleTransition(Duration.millis(600), lootIcon);
-        shrink.setToX(0); 
-        shrink.setToY(0);
-        
+        TranslateTransition fly = new TranslateTransition(Duration.millis(600), lootIcon); fly.setToX(400); fly.setToY(-300);
+        ScaleTransition shrink = new ScaleTransition(Duration.millis(600), lootIcon); shrink.setToX(0); shrink.setToY(0);
         ParallelTransition disappear = new ParallelTransition(fly, shrink);
-
-        // 3. Play Sequence
         SequentialTransition seq = new SequentialTransition(appear, wait, disappear);
         seq.setOnFinished(e -> cardAnimationLayer.getChildren().remove(lootIcon));
         seq.play();
     }
 
     private void animatePunishment(Player p, Group token, int punsihedPos) {
-        double[] c = getCenter(punsihedPos);
-        
-        // 1. Define Shake Animation
+        double[] c = getCenterWithOffset(punsihedPos, p);
         TranslateTransition shake = new TranslateTransition(Duration.millis(100), token);
-        shake.setByX(10); 
-        shake.setAutoReverse(true); 
-        shake.setCycleCount(4);
-        
-        // 2. Define Move Back Animation
+        shake.setByX(10); shake.setAutoReverse(true); shake.setCycleCount(4);
         TranslateTransition moveBack = new TranslateTransition(Duration.millis(500), token);
-        moveBack.setToX(c[0]); 
-        moveBack.setToY(c[1]);
-        
-        // 3. Play Sequence
+        moveBack.setToX(c[0]); moveBack.setToY(c[1]);
         SequentialTransition seq = new SequentialTransition(shake, moveBack);
-        seq.setOnFinished(e -> { 
-            spawnWaterSplash(token, 5); 
-            finalizeTurn(p, punsihedPos); 
-        });
+        seq.setOnFinished(e -> { spawnWaterSplash(token, 5); finalizeTurn(p, punsihedPos); });
         seq.play();
     }
 
     private void animateJump(Player p, Group token, int finalDest, boolean isSnake) {
-        double[] destCoords = getCenter(finalDest);
+        double[] destCoords = getCenterWithOffset(finalDest, p);
         TranslateTransition jumpAnim = new TranslateTransition(Duration.millis(1000), token);
         jumpAnim.setToX(destCoords[0]); jumpAnim.setToY(destCoords[1]);
         if (isSnake) spawnWaterSplash(token, 15); else spawnFireSparkles(token, 15);
@@ -551,9 +447,9 @@ public class BoardView extends StackPane {
         }
     }
 
-    private void builddialogOverlayer() {
-        dialogOverlayer.setVisible(false);
-        dialogOverlayer.setStyle("-fx-background-color: rgba(0,0,0,0.7)");
+    private void buildDialogOverlay() {
+        dialogOverlay.setVisible(false);
+        dialogOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.7)");
     }
 
     private void showDialog(String title, String message, Runnable onYes, Runnable onNo) {
@@ -564,12 +460,12 @@ public class BoardView extends StackPane {
         Label body = new Label(message); body.setFont(Font.font("Arial", 16));
         HBox buttons = new HBox(20); buttons.setAlignment(Pos.CENTER);
         Button btnYes = new Button("YES"); btnYes.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 30;");
-        btnYes.setOnAction(e -> { dialogOverlayer.setVisible(false); onYes.run(); });
+        btnYes.setOnAction(e -> { dialogOverlay.setVisible(false); onYes.run(); });
         Button btnNo = new Button("NO"); btnNo.setStyle("-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 30;");
-        btnNo.setOnAction(e -> { dialogOverlayer.setVisible(false); onNo.run(); });
+        btnNo.setOnAction(e -> { dialogOverlay.setVisible(false); onNo.run(); });
         buttons.getChildren().addAll(btnYes, btnNo);
         box.getChildren().addAll(header, body, buttons);
-        dialogOverlayer.getChildren().setAll(box); dialogOverlayer.setVisible(true);
+        dialogOverlay.getChildren().setAll(box); dialogOverlay.setVisible(true);
     }
     
     private Group createDeckVisual() {
@@ -633,33 +529,52 @@ public class BoardView extends StackPane {
         }
     }
     
-    private void moveInstant(Node node, int position) {
-        double[] c = getCenter(position); node.setTranslateX(c[0]); node.setTranslateY(c[1]);
+    private void moveInstant(Node node, int position, Player p) {
+        double[] c = getCenterWithOffset(position, p); 
+        node.setTranslateX(c[0]); node.setTranslateY(c[1]);
     }
     
     private void updateTurnLabel() {
         if (!engine.isGameOver()) turnLabel.setText("Turn: " + engine.getCurrentPlayer().getName());
     }
     
-    private void buildvictoryOverlayer() {
-        victoryOverlayer.setVisible(false); victoryOverlayer.setStyle("-fx-background-color: rgba(0,0,0,0.85)");
+    private void buildVictoryOverlay() {
+        victoryOverlay.setVisible(false); victoryOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.85)");
         VBox box = new VBox(10); box.setAlignment(Pos.CENTER);
         Label text = new Label("VICTORY!"); text.setFont(Font.font("Verdana", FontWeight.EXTRA_BOLD, 80));
         text.setTextFill(Color.GOLD); text.setEffect(new Glow(1.0));
-        box.getChildren().add(text); victoryOverlayer.getChildren().add(box);
+        box.getChildren().add(text); victoryOverlay.getChildren().add(box);
     }
     
     private void showVictory(String winnerName) {
-        victoryOverlayer.setVisible(true);
-        VBox box = (VBox) victoryOverlayer.getChildren().get(0);
+        victoryOverlay.setVisible(true);
+        VBox box = (VBox) victoryOverlay.getChildren().get(0);
         Label l = (Label) box.getChildren().get(0); l.setText(winnerName + " WINS!");
         Timeline fireworks = new Timeline(new KeyFrame(Duration.millis(300), e -> spawnFireSparkles(l, 20)));
         fireworks.setCycleCount(20); fireworks.play();
     }
     
-    private double[] getCenter(int position) {
-        int row = (position - 1) / SIZE; int col = (position - 1) % SIZE;
-        double x = 50 + col * TILE + TILE / 2.0; double y = 50 + (SIZE - row - 1) * TILE + TILE / 2.0;
+    private double[] getCenter(int position) { 
+        int row = (position - 1) / SIZE;
+        int col;
+        if (row % 2 == 0) col = (position - 1) % SIZE;
+        else col = SIZE - 1 - ((position - 1) % SIZE);
+        double x = 50 + col * TILE + TILE / 2.0;
+        double y = 50 + (SIZE - row - 1) * TILE + TILE / 2.0;
         return new double[]{x, y};
+    }
+    
+    private double[] getCenterWithOffset(int position, Player p) { // i let the ai declare it :(
+        double[] center = getCenter(position);
+
+        int playerIndex = engine.getPlayers().indexOf(p);
+
+        double offsetX = 0; double offsetY = 0;
+        
+        if (playerIndex == 0) { offsetX = -15; offsetY = -15; }
+        else if (playerIndex == 1) { offsetX = 15; offsetY = -15; }
+        else if (playerIndex == 2) { offsetX = -15; offsetY = 15; }
+        else if (playerIndex == 3) { offsetX = 15; offsetY = 15; }
+        return new double[] { center[0] + offsetX, center[1] + offsetY };
     }
 }
