@@ -82,19 +82,13 @@ public class GameRules {
     }
 
     int currentIndex = players.indexOf(currentPlayer);
+    int opponentIndex = currentIndex;
 
-    if (currentIndex == -1) {
-        return null; 
+    while (++opponentIndex % players.size() != currentIndex){
+
+        Player opponent = players.get(opponentIndex % players.size());
+        if (opponent.hasAbility(Ability.BLOCK_LADDER)) return opponent;
     }
-
-    int opponent = (currentIndex + 1) % players.size();
-    Player oppo = players.get(opponent);
-
-    if (oppo.hasAbility(Ability.BLOCK_LADDER)) {
-        return oppo;
-    }
-
     return null;
-}
-
+    }
 }
